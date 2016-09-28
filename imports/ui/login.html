@@ -1,0 +1,64 @@
+<!-- <template name="profile_list">
+  {{ profiles.length }}
+  <ul>
+    {{#each profiles}}
+    {{> profile}}
+    {{/each}}
+  </ul>
+</template>
+
+<template name="posts_list">
+  <ul>
+    {{#each posts}}
+    {{> post}}
+    {{/each}}
+  </ul>
+</template>
+
+<template name='post'>
+  <li>{{ content }}</li>
+</template>
+
+<template name='profile'>
+  <li>{{ email }}</li>
+</template> -->
+
+<template name="login">
+  {{#if app_error}}
+    {{ app_error.message }}
+  {{/if}}
+  <form class="login-form">
+    <h1>Fazer login</h1>
+    <input type="email" name='email'>
+    <input type="password" name='password'>
+    <button>Entrar</button>
+  </form>
+  <a href="/register">Registar</a>
+</template>
+
+<template name="register">
+  {{#if app_error}}
+    {{ app_error.message }}
+  {{/if}}
+  <form class="register-form">
+    <h1>Criar conta</h1>
+    <input type="email" name='email'>
+    <input type="password" name='password'>
+    <button>Cadastrar</button>
+  </form>
+  <a href="/login">Login</a>
+</template>
+
+<template name='panel'>
+  <h1>Você está logado</h1>
+  <p>Bem vindo {{ profile.email }}</p>
+  <form class="new-post">
+    <div class='form-group'>
+      <label for="post-content">Poste aqui sua mensagem</label>
+      <textarea class='form-control' id="post-content" name="content"></textarea>
+    </div>
+    <button class='btn btn-primary' disabled='{{ isDisabled }}' >Enviar</button>
+  </form>
+  <span>Caracteres restantes: <strong class="remaining {{remaining_chars_class}}">{{remaining_chars}}</strong></span>
+  <div class='preview'>{{{html}}}</div>
+</template>
