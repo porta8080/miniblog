@@ -70,9 +70,7 @@
   </form>
   <span>Caracteres restantes: <strong class="remaining {{remaining_chars_class}}">{{remaining_chars}}</strong></span>
   <div class='preview'>
-    {{#markdown}}
-    {{{html}}}
-    {{/markdown}}
+    {{#markdown}}{{{html}}}{{/markdown}}
   </div>
   <ul>
     {{#each latest_postings}}
