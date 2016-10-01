@@ -2,7 +2,7 @@ import './main.html';
 import '../imports/ui/login.html';
 import '../imports/global.js';
 import '../imports/api/profiles.js';
-import '../imports/api/posts.js';
+import '../imports/api/postings.js';
 
 import { Meteor } from 'meteor/meteor';
 import { Template } from 'meteor/templating';
@@ -10,19 +10,20 @@ import { ReactiveVar } from 'meteor/reactive-var';
 import { Mongo } from 'meteor/mongo';
 import { Profiles } from '../imports/api/profiles.js';
 import { Profile } from '../imports/api/profiles.js';
-import { Posts } from '../imports/api/posts.js';
-import { Post } from '../imports/api/posts.js';
+import { Postings } from '../imports/api/postings.js';
+import { Posting } from '../imports/api/postings.js';
+import { Categories } from '../imports/api/categories.js';
+import { Category } from '../imports/api/categories.js';
+import { Diatrics } from '../imports/global.js';
 
 var GLOBAL = {};
 
 Meteor.startup(function(){
-  console.log('Started');
   var data = {profiles: Profiles.find().fetch()};
-  console.log(data);
 });
 
 // export const Blogs = new Mongo.Collection('blogs');
-// export const Posts = new Mongo.Collection('posts');
+// export const Postings = new Mongo.Collection('posts');
 
 Template.login.onCreated(function loginOnCreated() {
   this.app_error = new ReactiveVar(null);
@@ -31,7 +32,7 @@ Template.login.onCreated(function loginOnCreated() {
 Template.panel.onCreated(function loginOnCreated() {
   this.html = new ReactiveVar('');
   this.remaining_chars_class = new ReactiveVar('');
-  this.remaining_chars = new ReactiveVar(Post.max_length);
+  this.remaining_chars = new ReactiveVar(Posting.max_length);
 });
 
 Template.registerHelper('equals', function (a, b) {
@@ -92,7 +93,7 @@ Template.login.helpers({
 });
 
 Meteor.methods({
-  setSession: function(profile){
+  startSession: function(profile){
     Session.setPersistent('profile',profile);
     Router.go('/panel');
   }
@@ -118,7 +119,7 @@ Template.login.events({
     });
 
     if(profile){
-      Meteor.call('setSession',profile);
+      Meteor.call('startSession',profile);
     }else{
       instance.app_error.set({message: 'Houve um erro'});
     }
@@ -140,11 +141,14 @@ Template.login.events({
     target.email.value = '';
     target.password.value = '';
 
-    Meteor.call('setSession',profile);
+    Meteor.call('startSession',profile);
   },
 });
 
 Template.panel.helpers({
+  latest_postings(){
+    return Postings.find({status: Posting.status['active']},{limit:12,sort: {created_at: -1}}).fetch();
+  },
   html() {
     return Template.instance().html.get();
   },
@@ -157,25 +161,58 @@ Template.panel.helpers({
   },
   isDisabled(){
     return Template.instance().remaining_chars.get() < 0;
+  },
+  teste(){
+    return ['2das','adasd'];
   }
 });
 
 Template.panel.events({
-  'submit .new-post'(event, instance){
+  'submit .new-posting'(event, instance){
     event.preventDefault();
     const target = event.target;
 
     var content = target.content;
+    var categories = target.categories;
 
-    Post.checkLength(content.value);
+    if(Posting.isLengthAllowed(content.value)){
+      var category, regex, posting_categories = [];
+      categories = categories.value.split(',');
+      for(var k in categories){
+        category_name = categories[k];
+        slug = category_name.slugify();
+        category = Categories.findOne({slug: slug});
+        if(!category){
+          category = Categories.insert({
+            name: category_name,
+            slug: slug,
+            profile: Session.get('profile')
+          });
+        }
+
+        posting_categories.push(category);
+      }
+
+      var posting = Postings.insert({
+        profile: Session.get('profile'),
+        content: content.value,
+        created_at: Date.now(),
+        categories: posting_categories,
+        status: Posting.status['active']
+      });
+
+    }else alert('Não pode');
+
+    content.value = '';
+    categories.value = '';
   },
-  'keyup .new-post textarea'(event, instance){ console.log(Post.max_length)
-    clearInterval(GLOBAL['new_post_timer']);
-    GLOBAL['new_post_timer'] = null;
-    GLOBAL['new_post_timer'] = setTimeout(function(){
-      var html = Post.toHtml(event.target.value);
-      instance.html.set(html);
-      var remaining_chars = Post.max_length - $(html).text().length;
+  'keyup .new-posting textarea'(event, instance){
+    clearInterval(GLOBAL['new_posting_timer']);
+    GLOBAL['new_posting_timer'] = null;
+    GLOBAL['new_posting_timer'] = setTimeout(function(){
+      var html = Posting.toHtml(event.target.value);
+      instance.html.set(event.target.value);
+      var remaining_chars = Posting.max_length - $(html).text().length;
       var remaining_chars_class = remaining_chars >= 0 ? '' : 'not-allowed';
       instance.remaining_chars.set(remaining_chars);
       instance.remaining_chars_class.set(remaining_chars_class);

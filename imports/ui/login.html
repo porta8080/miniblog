@@ -1,31 +1,31 @@
 <!-- <template name="profile_list">
-  {{ profiles.length }}
-  <ul>
-    {{#each profiles}}
-    {{> profile}}
-    {{/each}}
-  </ul>
+{{ profiles.length }}
+<ul>
+{{#each profiles}}
+{{> profile}}
+{{/each}}
+</ul>
 </template>
 
-<template name="posts_list">
-  <ul>
-    {{#each posts}}
-    {{> post}}
-    {{/each}}
-  </ul>
+<template name="postings_list">
+<ul>
+{{#each postings}}
+{{> posting}}
+{{/each}}
+</ul>
 </template>
 
-<template name='post'>
-  <li>{{ content }}</li>
+<template name='posting'>
+<li>{{ content }}</li>
 </template>
 
 <template name='profile'>
-  <li>{{ email }}</li>
+<li>{{ email }}</li>
 </template> -->
 
 <template name="login">
   {{#if app_error}}
-    {{ app_error.message }}
+  {{ app_error.message }}
   {{/if}}
   <form class="login-form">
     <h1>Fazer login</h1>
@@ -38,7 +38,7 @@
 
 <template name="register">
   {{#if app_error}}
-    {{ app_error.message }}
+  {{ app_error.message }}
   {{/if}}
   <form class="register-form">
     <h1>Criar conta</h1>
@@ -49,16 +49,34 @@
   <a href="/login">Login</a>
 </template>
 
+<template name='posting'>
+  <li>
+    {{#markdown}}
+    {{ content }}
+    {{/markdown}}
+  </li>
+</template>
+
 <template name='panel'>
   <h1>Você está logado</h1>
   <p>Bem vindo {{ profile.email }}</p>
-  <form class="new-post">
+  <form class="new-posting">
     <div class='form-group'>
-      <label for="post-content">Poste aqui sua mensagem</label>
-      <textarea class='form-control' id="post-content" name="content"></textarea>
+      <label for="posting-content">Nova postagem</label>
+      <input type="text" name='categories' class='form-control' placeholder="categorias" />
+      <textarea class='form-control' id="posting-content" name="content"></textarea>
     </div>
     <button class='btn btn-primary' disabled='{{ isDisabled }}' >Enviar</button>
   </form>
   <span>Caracteres restantes: <strong class="remaining {{remaining_chars_class}}">{{remaining_chars}}</strong></span>
-  <div class='preview'>{{{html}}}</div>
+  <div class='preview'>
+    {{#markdown}}
+    {{{html}}}
+    {{/markdown}}
+  </div>
+  <ul>
+    {{#each latest_postings}}
+    {{> posting}}
+    {{/each}}
+  </ul>
 </template>
