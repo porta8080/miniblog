@@ -50,10 +50,11 @@
 </template>
 
 <template name='posting'>
-  <li>
+  <li data-post-id="{{ _id }}">
     {{#markdown}}{{ content }}{{/markdown}}
   </li>
 </template>
+
 
 <template name='panel'>
   <h1>Você está logado</h1>
@@ -70,7 +71,7 @@
   <div class='preview'>
     {{#markdown}}{{{html}}}{{/markdown}}
   </div>
-  <ul>
+  <ul id='postings'>
     {{#each latest_postings}}
     {{> posting}}
     {{/each}}

@@ -34,16 +34,15 @@ Template.panel.onCreated(function loginOnCreated() {
   this.remaining_chars_class = new ReactiveVar('');
   this.remaining_chars = new ReactiveVar(Posting.max_length);
 });
-
-Template.registerHelper('equals', function (a, b) {
-  return a === b;
-});
+//
+// Template.registerHelper('equals', function (a, b) {
+//   return a === b;
+// });
 
 // if(Meteor.isServer){
 // }
 //
-// if(Meteor.isClient){
-// }
+
 
 // Routes
 Router.configure({
@@ -75,15 +74,65 @@ Router.route('/edit', function () {
   this.render('panel');
 });
 
-Router.route('/my-posts', function () {
-  // my posts
-  this.render('panel');
-});
+if(Meteor.isClient) {
+  var POST_IDS;
+  var LOADING_POSTS = false;
 
-// Template.profile_list.helpers({
-//   profiles(){
-//     return Profiles.find({});
-//   }
+  $window = $(window);
+  $window.load(function(){
+    console.log($('[data-post-id]').length)
+
+  });
+
+  $window.scroll(function(event){
+    if(!POST_IDS){
+      POST_IDS = [];
+      var ids = $('[data-post-id]').each(function(){
+        console.log($(this).attr('data-post-id'))
+        POST_IDS.push($(this).attr('data-post-id'));
+      });
+    }
+
+    if($window.scrollTop() + $window.height() > $(document).height() - 20) { // to detect scroll event
+      if(!LOADING_POSTS){
+        LOADING_POSTS = true;
+        // var scrollTop = $(this).scrollTop();
+        //
+        // if(scrollTop > lastScrollTop){ // detect scroll down
+        //   Session.set("itemsLimit", Session.get("itemsLimit") + 9); // when it reaches the end, add another 9 elements
+        // }
+        //
+        // lastScrollTop = scrollTop;
+        var postings = Postings.find({status: Posting.status['active'], _id: {$nin: POST_IDS}},{limit:3}).fetch();
+        if(postings.length > 0){
+          for(var k in postings){
+            posting = postings[k]
+            POST_IDS.push(posting._id);
+            Blaze.renderWithData(Template.posting, posting, $('#postings')[0]);
+          }
+        }
+        
+        LOADING_POSTS = false;
+      }
+    }
+  });
+}
+
+// Router.route('/my-posts', function () {
+//   // my posts
+//   this.render('panel');
+// });
+
+
+//
+// Router.map(function () {
+//   Router.route('/posts',{where: 'server'}).get(function(){
+//     console.log('oi')
+//   });
+// });
+
+// Router.route('/posts',{where: 'server'}).get(function(){
+//   // do something
 // });
 
 Template.login.helpers({
@@ -96,6 +145,9 @@ Meteor.methods({
   startSession: function(profile){
     Session.setPersistent('profile',profile);
     Router.go('/panel');
+  },
+  getMorePostings: function(ids){
+    return Postings.find({status: Posting.status['active'], _id: {$nin: ids}},{limit:3}).fetch();
   }
 });
 
@@ -147,7 +199,7 @@ Template.login.events({
 
 Template.panel.helpers({
   latest_postings(){
-    return Postings.find({status: Posting.status['active']},{limit:12,sort: {created_at: -1}}).fetch();
+    return Postings.find({status: Posting.status['active']},{limit:3}).fetch();
   },
   html() {
     return Template.instance().html.get();
@@ -161,9 +213,6 @@ Template.panel.helpers({
   },
   isDisabled(){
     return Template.instance().remaining_chars.get() < 0;
-  },
-  teste(){
-    return ['2das','adasd'];
   }
 });
 
