@@ -37,7 +37,7 @@ Template.panel.onCreated(function loginOnCreated() {
   var profile = Session.get('profile');
 
   this.watch_options = new ReactiveVar([]);
-  console.log(profile.query)
+
   this.categories_to_watch = new ReactiveVar(profile.watching);
 });
 //
@@ -259,7 +259,7 @@ Template.panel.helpers({
 });
 
 Template.panel.events({
-  'click .stop_watching'(event){
+  'click .stop_watching'(event,instance){
     var category_element = $(event.target).parents('.category');
     var id = category_element.attr('data-id');
     var profile = Session.get('profile');
@@ -268,27 +268,29 @@ Template.panel.events({
     var watching = profile.watching;
     var new_watching = [];
     for(category of watching){
-      if(watching._id != id) new_watching.push(category);
+      if(category._id != id) new_watching.push(category);
     }
 
     Profiles.update(profile._id, {$set: {watching: new_watching}});
     profile.watching = new_watching;
-    Session.setPersistent(profile);
+    Session.setPersistent('profile',profile);
+    instance.categories_to_watch.set(new_watching);
   },
   'click .option'(event,instance){
     var option_element = $(event.target);
     var id = option_element.attr('data-id');
-    var category = Categories.find(id);
+    var category = Categories.findOne({_id: id});
 
     var profile = Session.get('profile');
     var watching = profile.watching ? profile.watching : [];
 
     watching.push(category);
-    Profiles.update(profile._id, {$set: {watching: watching}});
-    Session.setPersistent(profile);
+    Profiles.update({_id: profile._id}, {$set: {watching: watching}});
+    Session.setPersistent('profile',profile);
 
-    option_element.val('');
+    $('.watch_category').val('');
     instance.watch_options.set([]);
+    instance.categories_to_watch.set(watching);
   },
   'input .watch_category'(event, instance){
     var watch_category = event.target, categories = [];

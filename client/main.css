@@ -27,3 +27,7 @@
   left: 0px;
   width: 100%;
 }
+
+.category{
+  display: inline-block;
+}
