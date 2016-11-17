@@ -55,25 +55,86 @@
   </li>
 </template>
 
+<template name='timeline'>
+  <li data-post-id="{{ _id }}">
+    {{#markdown}}{{ content }}{{/markdown}}
+  </li>
+</template>
+
+<template name='watch_option'>
+  <li data-category-id="{{ _id }}" class="list-group-item option">
+    {{ name }}
+  </li>
+</template>
+
+<template name='category_to_watch'>
+  <div class='category' data-id="{{ _id }}">
+    <i class='fa fa-close stop_watching'></i>
+    {{ name }}
+  </div>
+</template>
 
 <template name='panel'>
-  <h1>Você está logado</h1>
-  <p>Bem vindo {{ profile.email }}</p>
-  <form class="new-posting">
-    <div class='form-group'>
-      <label for="posting-content">Nova postagem</label>
-      <input type="text" name='categories' class='form-control' placeholder="categorias" />
-      <textarea class='form-control' id="posting-content" name="content"></textarea>
+  <script src="https://use.fontawesome.com/3a507dd669.js"></script>
+
+  <div id='watch'>
+    <div class='categories_to_watch'>
+      {{#each categories_to_watch}}
+      {{> category_to_watch}}
+      {{/each}}
     </div>
-    <button class='btn btn-primary' disabled='{{ isDisabled }}' >Enviar</button>
-  </form>
-  <span>Caracteres restantes: <strong class="remaining {{remaining_chars_class}}">{{remaining_chars}}</strong></span>
-  <div class='preview'>
-    {{#markdown}}{{{html}}}{{/markdown}}
+    <div class='watch_options'>
+      <input type="text" class='watch_category'>
+      <ul class='list-group'>
+        {{#each watch_options}}
+        {{> watch_option}}
+        {{/each}}
+      </ul>
+    </div>
   </div>
-  <ul id='postings'>
-    {{#each latest_postings}}
-    {{> posting}}
-    {{/each}}
-  </ul>
 </template>
+
+<!-- <template name='panel__'>
+<div class='query_item' data-template='query_item'></div>
+<h1>Você está logado</h1>
+<p>Bem vindo {{ profile.email }}</p>
+<div class='query_string_group'>
+<span for="">Query</span>
+<div id='query_string'>
+<div class='chosen_query_strings'>
+<span class='query_string_item'>Query String 1 <i class='fa fa-close'></i></span>
+</div>
+<div class='options-group'>
+<input type="text" name='query_string' class='query_string' value="{{ query }}" />
+<ul class="list-group" id="query_options_list">
+{{#each query_options}}
+{{> query_option}}
+{{/each}}
+</ul>
+</div>
+</div>
+</div>
+<form class="new-posting">
+<div class='form-group'>
+<label for="posting-content">Nova postagem</label>
+<input type="text" name='categories' class='form-control' placeholder="categorias" />
+<textarea class='form-control' id="posting-content" name="content"></textarea>
+</div>
+<button class='btn btn-primary' disabled='{{ isDisabled }}' >Enviar</button>
+</form>
+<span>Caracteres restantes: <strong class="remaining {{remaining_chars_class}}">{{remaining_chars}}</strong></span>
+<div class='preview'>
+{{#markdown}}{{{html}}}{{/markdown}}
+</div>
+<!-- <ul id='postings'>
+{{#each latest_postings}}
+{{> posting}}
+{{/each}}
+</ul> -->
+<!-- <h2>Timeline</h2>
+<ul id='timeline'>
+{{#each timeline_posts}}
+{{> timeline}}
+{{/each}}
+</ul>
+</template> -->

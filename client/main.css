@@ -1,1 +1,29 @@
 /* CSS declarations go here */
+[data-template]{
+  display: none;
+}
+
+#watch{
+  display: inline-block;
+  background: white;
+}
+
+.watch_options, .categories_to_watch{
+  display: inline-block;
+}
+
+.watch_options{
+  position: relative;
+}
+
+.watch_options input{
+  border: 0 none;
+  background: none;
+}
+
+.watch_options .list-group{
+  margin-bottom: 0;
+  position: absolute;
+  left: 0px;
+  width: 100%;
+}
