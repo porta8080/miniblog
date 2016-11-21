@@ -438,7 +438,13 @@ Template.panel.events({
         status: Story.status['active']
       });
 
-      Sequences.update({name: 'story'},{$inc: {last:1},$push: reference: {_id: story,Sequences.findOne({name:'story'}).last}});
+      var sequence = Sequences.findAndModify({
+        query: {name: 'story'},
+        update: {$inc: {last:1}}
+      });
+
+
+      Sequences.update({name: 'story'},{$push: {reference: {_id: story, auto_increment: sequence.last}}});
 
       instance.new_story_subjects.set([]);
       instance.new_story_preview_html.set('');
