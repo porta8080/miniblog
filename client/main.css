@@ -3,25 +3,28 @@
   display: none;
 }
 
-#watch{
+.category_selection{
   display: inline-block;
   background: white;
+  border: 1px solid black;
+  width: 100%;
 }
 
-.watch_options, .categories_to_watch{
+.chosen, .choose{
   display: inline-block;
 }
 
-.watch_options{
+.choose{
   position: relative;
 }
 
-.watch_options input{
+.choose input{
   border: 0 none;
   background: none;
+  outline: none;
 }
 
-.watch_options .list-group{
+.choose .list-group{
   margin-bottom: 0;
   position: absolute;
   left: 0px;
@@ -30,4 +33,30 @@
 
 .category{
   display: inline-block;
+}
+
+.category.option{
+  width: 100%;
+  cursor: pointer;
+}
+
+.category.option:hover{
+  background: rgb(240,240,240);
+}
+
+.modal-dialog{
+  width: 100%;
+  padding: 0px 5%
+}
+
+#new_story_content{
+      min-height: 400px;
+}
+
+.new_story_wrapper{
+  border-right: 1px solid black;
+}
+
+.modal-header{
+  border: 0 none;
 }

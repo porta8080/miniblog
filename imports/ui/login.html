@@ -1,28 +1,3 @@
-<!-- <template name="profile_list">
-{{ profiles.length }}
-<ul>
-{{#each profiles}}
-{{> profile}}
-{{/each}}
-</ul>
-</template>
-
-<template name="postings_list">
-<ul>
-{{#each postings}}
-{{> posting}}
-{{/each}}
-</ul>
-</template>
-
-<template name='posting'>
-<li>{{ content }}</li>
-</template>
-
-<template name='profile'>
-<li>{{ email }}</li>
-</template> -->
-
 <template name="login">
   {{#if app_error}}
   {{ app_error.message }}
@@ -61,13 +36,13 @@
   </li>
 </template>
 
-<template name='watch_option'>
-  <li data-id="{{ _id }}" class="list-group-item option">
+<template name='category_option'>
+  <li data-id="{{ _id }}" class="list-group-item category option">
     {{ name }}
   </li>
 </template>
 
-<template name='category_to_watch'>
+<template name='chosen_category'>
   <div class='category' data-id="{{ _id }}">
     <i class='fa fa-close stop_watching'></i>
     {{ name }}
@@ -77,32 +52,107 @@
 <template name='panel'>
   <script src="https://use.fontawesome.com/3a507dd669.js"></script>
 
-  <div id='watch'>
-    <div class='categories_to_watch'>
-      {{#each categories_to_watch}}
-      {{> category_to_watch}}
-      {{/each}}
-    </div>
-    <div class='watch_options'>
-      <input type="text" class='watch_category'>
-      <ul class='list-group'>
-        {{#each watch_options}}
-        {{> watch_option}}
-        {{/each}}
-      </ul>
-    </div>
-  </div>
-</template>
+  <div class='container-fluid'>
+    <div class='row'>
+      <div class='col-lg-8'>
+        <div id='timeline'>
 
-<!-- <template name='panel__'>
-<div class='query_item' data-template='query_item'></div>
-<h1>Você está logado</h1>
-<p>Bem vindo {{ profile.email }}</p>
-<div class='query_string_group'>
-<span for="">Query</span>
-<div id='query_string'>
-<div class='chosen_query_strings'>
-<span class='query_string_item'>Query String 1 <i class='fa fa-close'></i></span>
+        </div>
+      </div>
+      <div class='col-lg-4'>
+        <div id='watch' class='category_selection'>
+          <div class='categories_to_watch chosen'>
+            {{#each categories_to_watch}}
+            {{> chosen_category}}
+            {{/each}}
+          </div>
+          <div class='watch_options choose'>
+            <input type="text" class='watch_category'>
+            <ul class='list-group'>
+              {{#each watch_options}}
+              {{> category_option}}
+              {{/each}}
+            </ul>
+          </div>
+          </div
+          >
+          {{#each new_story_modal_data}}
+          {{> new_story_modal}}
+          {{/each}}
+        </div>
+      </div>
+    </div>
+
+  </template>
+
+  <template name='new_story_modal'>
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#new_story_modal">
+      New story
+    </button>
+
+    <!-- Modal -->
+    <div class="modal fade" id="new_story_modal" tabindex="-1" role="dialog" aria-labelledby="new_story_modalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <!-- <h4 class="modal-title" id="new_story_modalLabel">Modal title</h4> -->
+          </div>
+          <div class="modal-body">
+            <div class="container-fluid">
+              <div class='row'>
+                <div class='col-lg-6 new_story_wrapper'>
+                  <form id="new_story_form">
+                    <!-- <div class='form-group'> -->
+                    <!-- <input type="text" name='categories' class='form-control' placeholder="categorias" /> -->
+                    <!-- <textarea class='form-control' id="posting-content" name="content"></textarea> -->
+
+                    <!-- </div> -->
+
+                    <div id='subjects' class='category_selection'>
+                      <div class='new_story_subjects chosen'>
+                        {{#each new_story_subjects}}
+                        {{> chosen_category}}
+                        {{/each}}
+                      </div>
+                      <div class='new_story_subject_options choose'>
+                        <input type="text" name='category_name' class='new_story_subject'>
+                        <ul class='list-group'>
+                          {{#each new_story_subject_options}}
+                          {{> category_option}}
+                          {{/each}}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div contenteditable="true" id='new_story_content'></div>
+                    <span>Remaining chars: <strong class="remaining {{new_story_remaining_data.class}}">{{new_story_remaining_data.length}}</strong></span>
+                    <button class='btn btn-primary' id='new_story_submit'>Send</button>
+                  </form>
+                </div>
+                <div class='col-lg-6 story_preview_wrapper'>
+                  <div id='new_story_preview'>
+                    {{#markdown}}{{{new_story_preview_html}}}{{/markdown}}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- <template name='panel__'>
+  <div class='query_item' data-template='query_item'></div>
+  <h1>Você está logado</h1>
+  <p>Bem vindo {{ profile.email }}</p>
+  <div class='query_string_group'>
+  <span for="">Query</span>
+  <div id='query_string'>
+  <div class='chosen_query_strings'>
+  <span class='query_string_item'>Query String 1 <i class='fa fa-close'></i></span>
 </div>
 <div class='options-group'>
 <input type="text" name='query_string' class='query_string' value="{{ query }}" />

@@ -24,3 +24,7 @@ Story.countLength = function(html){
 Story.isLengthAllowed = function(input){
   return (Story.max_length - Story.countLength(Story.toHtml(input))) > 0;
 }
+
+Story.remainingCharsLength = function(html){
+  return Story.max_length - $(html).text().length;
+}

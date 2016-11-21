@@ -17,6 +17,62 @@ import { Category } from '../imports/api/categories.js';
 import { Diatrics } from '../imports/global.js';
 
 var GLOBAL = {};
+window.categorySearch = function(input){
+  var categories = [];
+
+  if(input != ''){
+    var slug = input.slugify();
+    categories = Categories.find({name: new RegExp(slug)},{limit:12, sort: {name: 1}}).fetch();
+  }
+
+  return categories;
+}
+
+window.findCategoryBySlug = function(input){
+  var category = null;
+
+  if(input != ''){
+    var slug = input.slugify();
+    category = Categories.findOne({slug: slug});
+  }
+
+  return category;
+}
+
+window.choseOption = function(element){
+  var option_element = $(element);
+  var id = option_element.attr('data-id');
+  return Categories.findOne({_id: id});
+}
+
+window.removeOption = function(element,list){
+  var category_element = $(element).parents('.category');
+  var id = category_element.attr('data-id');
+  var new_list = [];
+
+  for(category of list){
+    if(category._id != id) new_list.push(category);
+  }
+
+  return new_list;
+}
+
+window.findOrCreateCategory = function(category_name){
+  var category = findCategoryBySlug(category_name);
+  if(!category){
+
+    category = {
+      name: category_name,
+      profile: Session.get('profile'),
+      slug: category_name.slugify(),
+      created_at: Date.now()
+    }
+
+    category['_id'] = Categories.insert(category);
+  }
+
+  return category;
+}
 
 // Meteor.startup(function(){
 //   var data = {profiles: Profiles.find().fetch()};
@@ -36,9 +92,12 @@ Template.panel.onCreated(function loginOnCreated() {
 
   var profile = Session.get('profile');
 
+  this.new_story_preview_html = new ReactiveVar('');
   this.watch_options = new ReactiveVar([]);
-
   this.categories_to_watch = new ReactiveVar(profile.watching);
+
+  this.new_story_subject_options = new ReactiveVar([]);
+  this.new_story_subjects = new ReactiveVar([]);
 });
 //
 // Template.registerHelper('equals', function (a, b) {
@@ -211,6 +270,12 @@ Template.login.events({
   },
 });
 
+// Template.new_story_modal.helpers({
+//   new_story_preview_html_() {
+//     return Template.instance().new_story_preview_html.get();
+//   }
+// });
+
 Template.panel.helpers({
   // latest_stories(){
   //   return Stories.find({status: Story.status['active']},{limit:3, sort: {created_at: -1}}).fetch();
@@ -250,16 +315,40 @@ Template.panel.helpers({
   //   //
   //   // return query;
   // },
+  new_story_modal_data(){
+    var content = Template.instance().new_story_preview_html.get();
+    var html = Story.toHtml(content);
+    var length = Story.remainingCharsLength(html);
+    var class_name = length >= 0 ? '' : 'not-allowed';
+
+    return [
+      {
+        new_story_preview_html: content,
+        new_story_remaining_data: {class: class_name, length: length},
+        new_story_subject_options: Template.instance().new_story_subject_options.get(),
+        new_story_subjects: Template.instance().new_story_subjects.get()
+      }
+    ];
+  },
+  new_story_preview_html() {
+    return Template.instance().new_story_preview_html.get();
+  },
   watch_options(){
     return Template.instance().watch_options.get();
   },
   categories_to_watch(){
     return Template.instance().categories_to_watch.get();
+  },
+  new_story_subject_options(){
+    return Template.instance().new_story_subject_options.get();
+  },
+  new_story_subjects(){
+    return Template.instance().new_story_subjects.get();
   }
 });
 
 Template.panel.events({
-  'click .stop_watching'(event,instance){
+  'click #watch .stop_watching'(event,instance){
     var category_element = $(event.target).parents('.category');
     var id = category_element.attr('data-id');
     var profile = Session.get('profile');
@@ -276,10 +365,8 @@ Template.panel.events({
     Session.setPersistent('profile',profile);
     instance.categories_to_watch.set(new_watching);
   },
-  'click .option'(event,instance){
-    var option_element = $(event.target);
-    var id = option_element.attr('data-id');
-    var category = Categories.findOne({_id: id});
+  'click #watch .option'(event,instance){
+    var category = choseOption(event.target);
 
     var profile = Session.get('profile');
     var watching = profile.watching ? profile.watching : [];
@@ -293,62 +380,86 @@ Template.panel.events({
     instance.categories_to_watch.set(watching);
   },
   'input .watch_category'(event, instance){
-    var watch_category = event.target, categories = [];
-
-    if(watch_category.value != ''){
-      var slug = watch_category.value.slugify();
-      categories = Categories.find({name: new RegExp(slug)},{limit:12, sort: {name: 1}}).fetch();
-    }
-
-    instance.watch_options.set(categories);
+    instance.watch_options.set(categorySearch(event.target.value));
   },
-  'submit .new-story'(event, instance){
+  'submit #new_story_form'(event, instance){
     event.preventDefault();
-    const target = event.target;
 
-    var content = target.content;
-    var categories = target.categories;
-    if(Story.isLengthAllowed(content.value)){
-      var category, regex, story_categories = [];
-      categories = categories.value.split(',');
+    var content = instance.new_story_preview_html.get();
+
+    if(Story.isLengthAllowed(content)){
+      var profile = Session.get('profile');
+
+      var categories = instance.new_story_subjects.get(), category;
       for(var k in categories){
-        category_name = categories[k];
-        slug = category_name.slugify();
-        category = Categories.findOne({slug: slug});
-        if(!category){
-          category = Categories.insert({
-            name: category_name,
-            slug: slug,
-            profile: Session.get('profile')
-          });
-        }
+        category = categories[k];
+        if(category.is_new){
+          delete category['is_new'];
+          delete category['_id'];
 
-        story_categories.push(category._id);
+          category.profile = profile;
+          category.slug = category.name.slugify();
+          category['_id'] = Categories.insert(category);
+
+          categories[k] = category;
+        }
+      }
+
+      var category_field = $(event.target.category_name);
+      if(category_field.val() != ''){
+        category_name = category_field.val();
+        categories.push(findOrCreateCategory(category_name));
       }
 
       var story = Stories.insert({
-        profile: Session.get('profile'),
-        content: content.value,
+        profile: profile,
+        content: content,
+        categories: categories,
         created_at: Date.now(),
-        categories: story_categories,
         status: Story.status['active']
       });
 
-    }else alert('Não pode');
-
-    content.value = '';
-    categories.value = '';
+      instance.new_story_subjects.set([]);
+      instance.new_story_preview_html.set('');
+      $('#new_story_content').html('');
+      $('#new_story_modal').modal('hide');
+    }
   },
-  'keyup .new-story textarea'(event, instance){
-    clearInterval(GLOBAL['new_story_timer']);
-    GLOBAL['new_story_timer'] = null;
-    GLOBAL['new_story_timer'] = setTimeout(function(){
-      var html = Story.toHtml(event.target.value);
-      instance.html.set(event.target.value);
-      var remaining_chars = Story.max_length - $(html).text().length;
-      var remaining_chars_class = remaining_chars >= 0 ? '' : 'not-allowed';
-      instance.remaining_chars.set(remaining_chars);
-      instance.remaining_chars_class.set(remaining_chars_class);
-    }, 1000);
+  'keyup #new_story_content'(event, instance){
+    var new_story_content = $(event.target);
+    var new_story_content_value = new_story_content.html();
+
+    instance.new_story_preview_html.set(new_story_content_value);
+  },
+  'input .new_story_subject'(event, instance){
+    var subject_name = event.target.value;
+
+    if(subject_name.indexOf(',') != -1){
+      subject_name = subject_name.split(',')[0];
+      var category = findCategoryBySlug(subject_name);
+
+      var categories = instance.new_story_subjects.get();
+
+      if(!category) category = {_id: Date.now(), name: subject_name, is_new: true};
+
+      categories.push(category);
+      instance.new_story_subjects.set(categories);
+
+      $('.new_story_subject').val('');
+    }else{
+      instance.new_story_subject_options.set(categorySearch(subject_name));
+    }
+  },
+  'click #subjects .option'(event,instance){
+    var category = choseOption(event.target);
+    var categories = instance.new_story_subjects.get();
+    categories.push(category);
+    instance.new_story_subjects.set(categories);
+    instance.new_story_subject_options.set([]);
+    $('.new_story_subject').val('');
+  },
+  'click #subjects .stop_watching'(event,instance){
+    var new_subjects = removeOption(event.target,instance.new_story_subjects.get());
+    instance.new_story_subjects.set(new_subjects);
   }
 });
