@@ -16,7 +16,21 @@ import { Categories } from '../imports/api/categories.js';
 import { Category } from '../imports/api/categories.js';
 import { Diatrics } from '../imports/global.js';
 
+export const Sequences = new Mongo.Collection('sequences');
+var stories_sequence = Sequences.findone({'stories.last': 0});
+if(!stories_sequence){
+  Sequences.insert({
+      name: 'story',
+      last: 0,
+      reference:[]
+    });
+}
+
 var GLOBAL = {};
+
+window.MIN_STORY_ID = null;
+window.MAX_STORY_ID = null;
+
 window.categorySearch = function(input){
   var categories = [];
 
@@ -26,7 +40,7 @@ window.categorySearch = function(input){
   }
 
   return categories;
-}
+};
 
 window.findCategoryBySlug = function(input){
   var category = null;
@@ -37,13 +51,13 @@ window.findCategoryBySlug = function(input){
   }
 
   return category;
-}
+};
 
 window.choseOption = function(element){
   var option_element = $(element);
   var id = option_element.attr('data-id');
   return Categories.findOne({_id: id});
-}
+};
 
 window.removeOption = function(element,list){
   var category_element = $(element).parents('.category');
@@ -55,7 +69,7 @@ window.removeOption = function(element,list){
   }
 
   return new_list;
-}
+};
 
 window.findOrCreateCategory = function(category_name){
   var category = findCategoryBySlug(category_name);
@@ -66,13 +80,13 @@ window.findOrCreateCategory = function(category_name){
       profile: Session.get('profile'),
       slug: category_name.slugify(),
       created_at: Date.now()
-    }
+    };
 
     category['_id'] = Categories.insert(category);
   }
 
   return category;
-}
+};
 
 // Meteor.startup(function(){
 //   var data = {profiles: Profiles.find().fetch()};
@@ -98,6 +112,8 @@ Template.panel.onCreated(function loginOnCreated() {
 
   this.new_story_subject_options = new ReactiveVar([]);
   this.new_story_subjects = new ReactiveVar([]);
+
+  this.timeline = new ReactiveVar([]);
 });
 //
 // Template.registerHelper('equals', function (a, b) {
@@ -315,6 +331,9 @@ Template.panel.helpers({
   //   //
   //   // return query;
   // },
+  timeline(){
+    return Template.instance().timeline.get();
+  },
   new_story_modal_data(){
     var content = Template.instance().new_story_preview_html.get();
     var html = Story.toHtml(content);
@@ -418,6 +437,8 @@ Template.panel.events({
         created_at: Date.now(),
         status: Story.status['active']
       });
+
+      Sequences.update({name: 'story'},{$inc: {last:1},$push: reference: {_id: story,Sequences.findOne({name:'story'}).last}});
 
       instance.new_story_subjects.set([]);
       instance.new_story_preview_html.set('');
