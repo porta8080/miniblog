@@ -68,3 +68,5 @@ Diatrics.slugify = function(input,options){
 String.prototype.slugify = function(options){
   return Diatrics.slugify(this.toString(),options);
 };
+
+export const Sequences = new Mongo.Collection('sequences');

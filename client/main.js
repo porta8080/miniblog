@@ -15,16 +15,7 @@ import { Story } from '../imports/api/stories.js';
 import { Categories } from '../imports/api/categories.js';
 import { Category } from '../imports/api/categories.js';
 import { Diatrics } from '../imports/global.js';
-
-export const Sequences = new Mongo.Collection('sequences');
-var stories_sequence = Sequences.findone({'stories.last': 0});
-if(!stories_sequence){
-  Sequences.insert({
-      name: 'story',
-      last: 0,
-      reference:[]
-    });
-}
+import { Sequene } from '../imports/global.js';
 
 var GLOBAL = {};
 
@@ -40,6 +31,16 @@ window.categorySearch = function(input){
   }
 
   return categories;
+};
+
+window.searchTimelineFromCriteria = function(criteria){
+  return Stories.find(criteria,{limit:10, sort: {created_at: -1}}).fetch();
+}
+
+window.getIdsFromCategories = function(categories){
+  var ids = [];
+  for(category of categories) ids.push(category._id);
+  return ids;
 };
 
 window.findCategoryBySlug = function(input){
@@ -88,9 +89,7 @@ window.findOrCreateCategory = function(category_name){
   return category;
 };
 
-// Meteor.startup(function(){
-//   var data = {profiles: Profiles.find().fetch()};
-// });
+// console.log(Stories.find({}).count())
 
 // export const Blogs = new Mongo.Collection('blogs');
 // export const Stories = new Mongo.Collection('posts');
@@ -100,11 +99,9 @@ Template.login.onCreated(function loginOnCreated() {
 });
 
 Template.panel.onCreated(function loginOnCreated() {
-  // this.html = new ReactiveVar('');
-  // this.remaining_chars_class = new ReactiveVar('');
-  // this.remaining_chars = new ReactiveVar(Story.max_length);
-
   var profile = Session.get('profile');
+
+  console.log(Stories.find({}).fetch())
 
   this.new_story_preview_html = new ReactiveVar('');
   this.watch_options = new ReactiveVar([]);
@@ -115,15 +112,6 @@ Template.panel.onCreated(function loginOnCreated() {
 
   this.timeline = new ReactiveVar([]);
 });
-//
-// Template.registerHelper('equals', function (a, b) {
-//   return a === b;
-// });
-
-// if(Meteor.isServer){
-// }
-//
-
 
 // Routes
 Router.configure({
@@ -224,6 +212,19 @@ if($window.scrollTop() + $window.height() > $(document).height() - 20) { // to d
 //   // do something
 // });
 
+Meteor.startup(function(){
+  if(Meteor.isServer){
+    var profile = Session.get('profile');
+
+    var ids = getIdsFromCategories(profile.watching);
+    var criteria = {status: Story.status['active']};
+    if(ids.length) criteria.categories = {$in: ids};
+
+    var timeline = searchTimelineFromCriteria(criteria);
+    Template.instance().timeline.set(timeline);
+  }
+});
+
 Template.login.helpers({
   app_error() {
     return Template.instance().app_error.get();
@@ -293,44 +294,6 @@ Template.login.events({
 // });
 
 Template.panel.helpers({
-  // latest_stories(){
-  //   return Stories.find({status: Story.status['active']},{limit:3, sort: {created_at: -1}}).fetch();
-  // },
-  // html() {
-  //   return Template.instance().html.get();
-  // },
-  // remaining_chars(){
-  //   return Template.instance().remaining_chars.get();
-  // },
-  // remaining_chars_class(){
-  //   var class_name = Template.instance().remaining_chars.get() < 0 ? 'not-allowed' : '';
-  //   return class_name;
-  // },
-  // isDisabled(){
-  //   return Template.instance().remaining_chars.get() < 0;
-  // },
-  // timeline_posts(){
-  //   // var profile = Session.get('profile');
-  //   // var query = profile.query;
-  //   // if(query){
-  //   //   // refatorar
-  //   //   var category_ids = [];
-  //   //   query.forEach(function(v){
-  //   //     category = Categories.findOne({slug: v});
-  //   //     if(category) category_ids.push(category._id);
-  //   //   });
-  //   //
-  //   //   if(category_ids.length > 0) return Stories.find({status: Story.status['active'], categories: {$in: category_ids}},{limit:10, sort: {created_at: -1}}).fetch();
-  //   // }
-  //   //
-  //   // return Stories.find({status: Story.status['active']},{limit:10, sort: {created_at: -1}}).fetch();
-  // },
-  // query(){
-  //   // var profile = Session.get('profile');
-  //   // var query = profile.query.join(', ');
-  //   //
-  //   // return query;
-  // },
   timeline(){
     return Template.instance().timeline.get();
   },
@@ -367,6 +330,9 @@ Template.panel.helpers({
 });
 
 Template.panel.events({
+  'load document'(event,instance){
+    alert('oi')
+  },
   'click #watch .stop_watching'(event,instance){
     var category_element = $(event.target).parents('.category');
     var id = category_element.attr('data-id');
@@ -442,7 +408,6 @@ Template.panel.events({
         query: {name: 'story'},
         update: {$inc: {last:1}}
       });
-
 
       Sequences.update({name: 'story'},{$push: {reference: {_id: story, auto_increment: sequence.last}}});
 
