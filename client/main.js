@@ -15,7 +15,7 @@ import { Story } from '../imports/api/stories.js';
 import { Categories } from '../imports/api/categories.js';
 import { Category } from '../imports/api/categories.js';
 import { Diatrics } from '../imports/global.js';
-import { Sequene } from '../imports/global.js';
+import { Sequences } from '../imports/global.js';
 
 var GLOBAL = {};
 
@@ -32,10 +32,6 @@ window.categorySearch = function(input){
 
   return categories;
 };
-
-window.searchTimelineFromCriteria = function(criteria){
-  return Stories.find(criteria,{limit:10, sort: {created_at: -1}}).fetch();
-}
 
 window.getIdsFromCategories = function(categories){
   var ids = [];
@@ -89,10 +85,20 @@ window.findOrCreateCategory = function(category_name){
   return category;
 };
 
-// console.log(Stories.find({}).count())
+window.resolveTimelineCriteria = function(profile){
+  if(!profile) profile = Session.get('profile');
+  var ids = getIdsFromCategories(profile.watching);
+  var criteria = {status: Story.status['active']};
+  if(ids.length) criteria.categories = {$in: ids};
+  return criteria;
+}
 
-// export const Blogs = new Mongo.Collection('blogs');
-// export const Stories = new Mongo.Collection('posts');
+window.getTimelineStories = function(profile){
+  var template = Template.instance()
+  Meteor.call('getTimelineStoriesOnTemplateCreated',resolveTimelineCriteria(profile),function(err,data){
+    template.timeline.set(data);
+  });
+}
 
 Template.login.onCreated(function loginOnCreated() {
   this.app_error = new ReactiveVar(null);
@@ -101,8 +107,7 @@ Template.login.onCreated(function loginOnCreated() {
 Template.panel.onCreated(function loginOnCreated() {
   var profile = Session.get('profile');
 
-  console.log(Stories.find({}).fetch())
-
+  this.timeline = new ReactiveVar([]);
   this.new_story_preview_html = new ReactiveVar('');
   this.watch_options = new ReactiveVar([]);
   this.categories_to_watch = new ReactiveVar(profile.watching);
@@ -110,7 +115,7 @@ Template.panel.onCreated(function loginOnCreated() {
   this.new_story_subject_options = new ReactiveVar([]);
   this.new_story_subjects = new ReactiveVar([]);
 
-  this.timeline = new ReactiveVar([]);
+  getTimelineStories(profile);
 });
 
 // Routes
@@ -138,10 +143,6 @@ Router.route('/logout', function () {
   this.render('panel');
 });
 
-// Router.route('/edit', function () {
-//   // edit profile
-//   this.render('panel');
-// });
 /*
 if(Meteor.isClient) {
 var POST_IDS;
@@ -212,19 +213,6 @@ if($window.scrollTop() + $window.height() > $(document).height() - 20) { // to d
 //   // do something
 // });
 
-Meteor.startup(function(){
-  if(Meteor.isServer){
-    var profile = Session.get('profile');
-
-    var ids = getIdsFromCategories(profile.watching);
-    var criteria = {status: Story.status['active']};
-    if(ids.length) criteria.categories = {$in: ids};
-
-    var timeline = searchTimelineFromCriteria(criteria);
-    Template.instance().timeline.set(timeline);
-  }
-});
-
 Template.login.helpers({
   app_error() {
     return Template.instance().app_error.get();
@@ -287,12 +275,6 @@ Template.login.events({
   },
 });
 
-// Template.new_story_modal.helpers({
-//   new_story_preview_html_() {
-//     return Template.instance().new_story_preview_html.get();
-//   }
-// });
-
 Template.panel.helpers({
   timeline(){
     return Template.instance().timeline.get();
@@ -330,9 +312,6 @@ Template.panel.helpers({
 });
 
 Template.panel.events({
-  'load document'(event,instance){
-    alert('oi')
-  },
   'click #watch .stop_watching'(event,instance){
     var category_element = $(event.target).parents('.category');
     var id = category_element.attr('data-id');
@@ -349,6 +328,8 @@ Template.panel.events({
     profile.watching = new_watching;
     Session.setPersistent('profile',profile);
     instance.categories_to_watch.set(new_watching);
+
+    getTimelineStories(profile);
   },
   'click #watch .option'(event,instance){
     var category = choseOption(event.target);
@@ -363,6 +344,8 @@ Template.panel.events({
     $('.watch_category').val('');
     instance.watch_options.set([]);
     instance.categories_to_watch.set(watching);
+
+    getTimelineStories(profile);
   },
   'input .watch_category'(event, instance){
     instance.watch_options.set(categorySearch(event.target.value));

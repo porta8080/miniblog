@@ -28,3 +28,4 @@ jparker:crypto-md5
 iron:router
 session
 u2622:persistent-session
+fongandrew:find-and-modify

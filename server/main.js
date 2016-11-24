@@ -10,7 +10,6 @@ import { Story } from '../imports/api/stories.js';
 import { Sequences } from '../imports/global.js';
 
 Meteor.startup(() => {
-  // Create Sequence collection if it doesn't exist
   var stories_sequence = Sequences.findOne({name: 'story'});
   if(!stories_sequence){
     var sequence = Sequences.insert({
@@ -19,14 +18,10 @@ Meteor.startup(() => {
       reference:[]
     });
   }
+});
 
-  // var profile = Session.get('profile');
-  // if(profile){
-  //   var ids = getIdsFromCategories(profile.watching);
-  //   var criteria = {status: Story.status['active']};
-  //   if(ids.length) criteria.categories = {$in: ids};
-  //
-  //   var timeline = searchTimelineFromCriteria(criteria);
-  //   Template.instance().timeline.set(timeline);
-  // }
+Meteor.methods({
+  getTimelineStoriesOnTemplateCreated: function(criteria){
+    return Stories.find(criteria,{limit:10, sort: {created_at: -1}}).fetch();
+  }
 });
